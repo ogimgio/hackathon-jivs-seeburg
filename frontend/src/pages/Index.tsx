@@ -26,7 +26,7 @@ const Index = () => {
   // Add these state variables to your Index component:
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [pendingSearchResults, setPendingSearchResults] = useState([]);
-  const [pendingAction, setPendingAction] = useState("mask");
+  const [pendingAction, setPendingAction] = useState<"mask" | "delete">("mask");
   const [isProcessing, setIsProcessing] = useState(false);
 
   // Modify your handleSearch function to show confirmation instead of processing immediately:

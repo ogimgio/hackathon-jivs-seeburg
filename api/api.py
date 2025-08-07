@@ -8,6 +8,7 @@ from pydantic_stuff import ProcessNameRequest, ProcessNameResponse, SearchReques
 from gdpr_risk_analyzer import extract_schema_metadata, perform_gdpr_analysis, generate_chart
 import io
 from fastapi.responses import StreamingResponse
+from sql_extraction import run_agent_for_names
 
 # ----- App Setup -----
 app = FastAPI()
@@ -26,9 +27,12 @@ app.add_middleware(
 def search_data(request: SearchRequest):
     # Mock data generation
     # add some time
-    import time
-    time.sleep(2)
-    return [
+    #import time
+    #time.sleep(2)
+    results = run_agent_for_names()
+    return results
+
+    """ return [
         DataRecordSearch(
             source="ORACLE_EBS_HACK.dbo.AR_HZ_PARTIES.PARTY_NAME",
             #firstName=request.firstName,
@@ -61,7 +65,7 @@ def search_data(request: SearchRequest):
             key="1337",
             probability=100
         )
-    ]
+    ] """
 
 # === FastAPI Endpoint ===
 @app.post("/process-name", response_model=ProcessNameResponse)

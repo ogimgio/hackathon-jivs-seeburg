@@ -5,8 +5,10 @@ import time
 import multiprocessing
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dotenv import load_dotenv  # <-- NEW
+from pydantic_stuff import DataRecordSearch
 
 load_dotenv()  # Load environment variables from .env file
+
 
 SERVER = 'sql-lakeside-server.database.windows.net'
 USERNAME = 'hackathon_beta'
@@ -42,15 +44,7 @@ def query_name_matches(name: str) -> list:
     Returns:
         list: Matching rows with metadata.
     """
-    # Use fixed list of known columns
-    targets = [
-        {"database": "ORACLE_EBS_HACK", "schema": "dbo", "table": "AR_HZ_PARTIES", "column": "PARTY_NAME"},
-        {"database": "ECC60jkl_HACK", "schema": "dbo", "table": "KNA1", "column": "NAME1"},
-        {"database": "ECC60jkl_HACK", "schema": "dbo", "table": "ADRC", "column": "NAME1"},
-        {"database": "ECC60jkl_HACK", "schema": "dbo", "table": "ADRC", "column": "MC_NAME1"},
-        {"database": "ECC60jkl_HACK", "schema": "dbo", "table": "ADRP", "column": "NAME_TEXT"},
-    ]
-
+    targets = SEARCH_TARGETS
     results = []
 
     def query_single(entry):
@@ -99,26 +93,50 @@ def query_name_matches(name: str) -> list:
     print(f"✅ Total matches found: {len(results)}")
     return results
 
+# ---------- FORMAT RESULTS AS DataRecordSearch ----------
+def format_results_as_datarecordsearch(results, name_input):
+    formatted_outputs = []
+
+    for result in results:
+        row_data = result["row"]
+        db, schema, table, column = result["database"], result["schema"], result["table"], result["column"]
+        source = f"{db}.{schema}.{table}"
+        key = f"{db}_{table}_{column}"
+        
+        # Get the name from the column that was searched
+        extracted_name = row_data.get(column, "Name Not Found")
+
+        # Simulate uniqueness: we only have 1 row at a time, so assume 1 unique ID
+        probability = 100
+
+        formatted_outputs.append(
+            DataRecordSearch(
+                source=source,
+                name=extracted_name,
+                key=key,
+                probability=probability
+            )
+        )
+
+
+        
+
+    return formatted_outputs
+
+
+
 def run_agent_for_names():
-
-    # ---------- SETUP AGENT ----------
     model = LiteLLMModel(model_id="gpt-4o")
-
     agent = CodeAgent(
         tools=[query_name_matches],
         model=model,
         max_steps=3
     )
-
     name_input = "Paula Erickson"
     prompt = f"Find all rows in the known relevant tables where a column like name matches '{name_input}'"
-    result = agent.run(prompt)
-    return result
+    raw_result = agent.run(prompt)
 
-# ---------- RUN AGENT ----------
-if __name__ == "__main__":
-    try: 
-        run_agent_for_names()
-    except Exception as e:
-        print(f"Error running agent: {e}")
+    print("\n🟩 Formatted Final Results:")
+    formatted_records = format_results_as_datarecordsearch(raw_result, name_input)
+    return formatted_records
     
