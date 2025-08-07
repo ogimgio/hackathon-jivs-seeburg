@@ -1,4 +1,7 @@
-import { useState, useMemo } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+// Note: Using shadcn components as per your original code
 import {
   Table,
   TableBody,
@@ -7,17 +10,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Search, FileText, Key, Lock } from "lucide-react";
+import { FileText, Search } from "lucide-react";
+import { useMemo, useState } from "react";
 
 interface DataRecord {
-  firstName: string;
-  lastName: string;
+  source: string;
+  name: string;
   key: string;
-  encryptionKey: string;
+  encryptionKey?: string;
   probability: number;
+  status?: string; // Add status field
 }
 
 interface DataTableProps {
@@ -30,26 +32,65 @@ export const DataTable = ({ data, action }: DataTableProps) => {
 
   const filteredData = useMemo(() => {
     if (!searchTerm) return data;
-    
+
     const term = searchTerm.toLowerCase();
     return data.filter(
       (record) =>
-        record.firstName.toLowerCase().includes(term) ||
-        record.lastName.toLowerCase().includes(term) ||
+        record.name.toLowerCase().includes(term) ||
         record.key.toLowerCase().includes(term)
     );
   }, [data, searchTerm]);
 
   const getProbabilityVariant = (probability: number) => {
-    if (probability >= 0.8) return "default";
-    if (probability >= 0.5) return "secondary";
+    if (probability >= 80) return "default";
+    if (probability >= 50) return "secondary";
     return "outline";
   };
 
   const getProbabilityColor = (probability: number) => {
-    if (probability >= 0.8) return "text-green-600";
-    if (probability >= 0.5) return "text-yellow-600";
+    if (probability >= 80) return "text-green-600";
+    if (probability >= 50) return "text-yellow-600";
     return "text-red-600";
+  };
+
+  const getStatusBadge = (record: DataRecord) => {
+    if (!record.status) {
+      return (
+        <Badge variant="outline" className="text-gray-600">
+          Pending
+        </Badge>
+      );
+    }
+
+    if (record.status.includes("masked") || record.status.includes("encrypted")) {
+      return (
+        <Badge variant="default" className="text-blue-600 bg-blue-100">
+          ✓ Masked
+        </Badge>
+      );
+    }
+
+    if (record.status.includes("deletion") || record.status.includes("deleted")) {
+      return (
+        <Badge variant="destructive" className="text-red-600 bg-red-100">
+          ✓ Deleted
+        </Badge>
+      );
+    }
+
+    if (record.status.includes("success") || record.status.includes("Success")) {
+      return (
+        <Badge variant="secondary" className="text-green-600 bg-green-100">
+          ✓ Processed
+        </Badge>
+      );
+    }
+
+    return (
+      <Badge variant="outline" className="text-red-600">
+        ✗ Failed
+      </Badge>
+    );
   };
 
   return (
@@ -59,16 +100,16 @@ export const DataTable = ({ data, action }: DataTableProps) => {
           <div className="space-y-1">
             <CardTitle className="flex items-center space-x-2">
               <FileText className="w-5 h-5 text-primary" />
-              <span>Search Results</span>
+              <span>Processing Results</span>
               <Badge variant="secondary" className="ml-2">
                 {filteredData.length} records
               </Badge>
             </CardTitle>
             <CardDescription>
-              Records ready for {action === "mask" ? "data masking" : "deletion"}
+              Records processed for {action === "mask" ? "data masking" : "deletion"}
             </CardDescription>
           </div>
-          
+
           <div className="relative w-64">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
             <Input
@@ -80,58 +121,52 @@ export const DataTable = ({ data, action }: DataTableProps) => {
           </div>
         </div>
       </CardHeader>
-      
+
       <CardContent>
         <div className="rounded-lg border border-border/50 bg-background/50">
           <div className="max-h-96 overflow-auto">
             <Table>
               <TableHeader className="sticky top-0 bg-background/95 backdrop-blur-sm">
                 <TableRow className="border-border/50">
-                  <TableHead className="font-semibold">First Name</TableHead>
-                  <TableHead className="font-semibold">Last Name</TableHead>
+                  <TableHead className="font-semibold text-center">Source</TableHead>
+                  <TableHead className="font-semibold">Name</TableHead>
                   <TableHead className="font-semibold">
                     <div className="flex items-center space-x-1">
-                      <Key className="w-4 h-4" />
-                      <span>Key</span>
-                    </div>
-                  </TableHead>
-                  <TableHead className="font-semibold">
-                    <div className="flex items-center space-x-1">
-                      <Lock className="w-4 h-4" />
-                      <span>Encryption Key</span>
+                      <span>Key (ID)</span>
                     </div>
                   </TableHead>
                   <TableHead className="font-semibold text-center">Probability</TableHead>
+                  <TableHead className="font-semibold">Status</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredData.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                       {searchTerm ? "No records match your search." : "No records found."}
                     </TableCell>
                   </TableRow>
                 ) : (
                   filteredData.map((record, index) => (
-                    <TableRow 
-                      key={index} 
+                    <TableRow
+                      key={index}
                       className="border-border/30 hover:bg-primary/5 transition-colors duration-200"
                     >
-                      <TableCell className="font-medium">{record.firstName}</TableCell>
-                      <TableCell className="font-medium">{record.lastName}</TableCell>
+                      <TableCell className="font-medium">{record.source}</TableCell>
+                      <TableCell className="font-medium">{record.name}</TableCell>
                       <TableCell className="font-mono text-sm bg-muted/50 rounded px-2 py-1 max-w-32 truncate">
                         {record.key}
                       </TableCell>
-                      <TableCell className="font-mono text-sm bg-muted/50 rounded px-2 py-1 max-w-32 truncate">
-                        {record.encryptionKey}
-                      </TableCell>
                       <TableCell className="text-center">
-                        <Badge 
+                        <Badge
                           variant={getProbabilityVariant(record.probability)}
                           className={`${getProbabilityColor(record.probability)} font-medium`}
                         >
-                          {(record.probability * 100).toFixed(1)}%
+                          {record.probability}%
                         </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {getStatusBadge(record)}
                       </TableCell>
                     </TableRow>
                   ))
@@ -140,11 +175,11 @@ export const DataTable = ({ data, action }: DataTableProps) => {
             </Table>
           </div>
         </div>
-        
+
         {filteredData.length > 0 && (
           <div className="mt-4 p-3 bg-primary/5 rounded-lg border border-primary/20">
             <p className="text-sm text-primary font-medium">
-              ✓ Ready to {action === "mask" ? "mask" : "delete"} {filteredData.length} record{filteredData.length !== 1 ? "s" : ""}
+              ✓ {action === "mask" ? "Masked" : "Deleted"} {filteredData.filter(r => r.status && !r.status.includes("Failed")).length} of {filteredData.length} record{filteredData.length !== 1 ? "s" : ""}
             </p>
           </div>
         )}
