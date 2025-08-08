@@ -9,7 +9,7 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 // Using basic table since shadcn Table not available in this environment
-import { AlertTriangle, Shield, Trash2 } from "lucide-react";
+import { AlertTriangle, FileText, Shield, Trash2 } from "lucide-react";
 
 interface DataRecord {
     source: string;
@@ -23,7 +23,7 @@ interface ConfirmationDialogProps {
     onClose: () => void;
     onConfirm: () => void;
     data: DataRecord[];
-    action: "mask" | "delete";
+    action: "mask" | "delete" | "log";
     isProcessing?: boolean;
 }
 
@@ -42,24 +42,69 @@ export const ConfirmationDialog = ({
     };
 
     const getProbabilityColor = (probability: number) => {
-        if (probability >= 80) return "text-green-600";
+        if (probability >= 80) return "text-white";
         if (probability >= 50) return "text-yellow-600";
         return "text-red-600";
     };
 
-    const ActionIcon = action === "mask" ? Shield : Trash2;
-    const actionText = action === "mask" ? "mask" : "delete";
+    const getActionConfig = (action: string) => {
+        switch (action) {
+            case "mask":
+                return {
+                    icon: Shield,
+                    text: "mask",
+                    title: "Masking",
+                    color: "text-emerald-600",
+                    bgColor: "bg-emerald-600 hover:bg-emerald-700",
+                    description: "This will encrypt the personal data while keeping records searchable.",
+                    buttonText: "Mask Data"
+                };
+            case "delete":
+                return {
+                    icon: Trash2,
+                    text: "delete",
+                    title: "Deletion",
+                    color: "text-red-600",
+                    bgColor: "bg-red-600 hover:bg-red-700",
+                    description: "This action cannot be undone. The data will be permanently removed.",
+                    buttonText: "Delete Data"
+                };
+            case "log":
+                return {
+                    icon: FileText,
+                    text: "log",
+                    title: "Logging",
+                    color: "text-blue-600",
+                    bgColor: "bg-blue-600 hover:bg-blue-700",
+                    description: "This will record data access and create an audit trail for compliance.",
+                    buttonText: "Log Data"
+                };
+            default:
+                return {
+                    icon: Shield,
+                    text: "process",
+                    title: "Processing",
+                    color: "text-gray-600",
+                    bgColor: "bg-gray-600 hover:bg-gray-700",
+                    description: "This will process the selected records.",
+                    buttonText: "Process Data"
+                };
+        }
+    };
+
+    const actionConfig = getActionConfig(action);
+    const ActionIcon = actionConfig.icon;
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden">
                 <DialogHeader>
                     <DialogTitle className="flex items-center space-x-2">
-                        <ActionIcon className={action === "mask" ? "w-5 h-5 text-blue-600" : "w-5 h-5 text-red-600"} />
-                        <span>Confirm Data {action === "mask" ? "Masking" : "Deletion"}</span>
+                        <ActionIcon className={`w-5 h-5 ${actionConfig.color}`} />
+                        <span>Confirm Data {actionConfig.title}</span>
                     </DialogTitle>
                     <DialogDescription>
-                        Are you sure you want to {actionText} these {data.length} records?
+                        Are you sure you want to {actionConfig.text} these {data.length} records?
                     </DialogDescription>
                 </DialogHeader>
 
@@ -67,10 +112,7 @@ export const ConfirmationDialog = ({
                     <div className="flex items-center space-x-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                         <AlertTriangle className="w-4 h-4 text-yellow-600 flex-shrink-0" />
                         <p className="text-sm text-yellow-800">
-                            {action === "mask"
-                                ? "This will encrypt the personal data while keeping records searchable."
-                                : "This action cannot be undone. The data will be permanently removed."
-                            }
+                            {actionConfig.description}
                         </p>
                     </div>
 
@@ -113,7 +155,7 @@ export const ConfirmationDialog = ({
                             Total Records: <span className="text-primary">{data.length}</span>
                         </span>
                         <span className="text-sm text-muted-foreground">
-                            Action: <span className="font-medium capitalize">{actionText}</span>
+                            Action: <span className="font-medium capitalize">{actionConfig.text}</span>
                         </span>
                     </div>
                 </div>
@@ -127,7 +169,7 @@ export const ConfirmationDialog = ({
                         Cancel
                     </Button>
                     <Button
-                        className={action === "mask" ? "bg-blue-600 hover:bg-blue-700 text-white" : "bg-red-600 hover:bg-red-700 text-white"}
+                        className={`${actionConfig.bgColor} text-white`}
                         onClick={onConfirm}
                         disabled={isProcessing}
                     >
@@ -139,7 +181,7 @@ export const ConfirmationDialog = ({
                         ) : (
                             <>
                                 <ActionIcon className="w-4 h-4 mr-2" />
-                                {action === "mask" ? "Mask Data" : "Delete Data"}
+                                {actionConfig.buttonText}
                             </>
                         )}
                     </Button>

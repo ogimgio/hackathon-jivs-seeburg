@@ -78,6 +78,9 @@ const Index = () => {
   const handleProcessRecords = async (records, action) => {
     setIsProcessing(true);
 
+    // if the action is log, just put it as delete
+    action = action === "log" ? "delete" : action;
+
     try {
       const processPromises = records.map(record =>
         fetch("http://localhost:8000/process-name", {
@@ -171,21 +174,23 @@ const Index = () => {
 
 
       <div className="max-w-7xl mx-auto space-y-8">
-        <header className="text-center py-8">
+        <header className="flex items-center justify-between py-8">
+          {/* Logo */}
           <img
-            src="/loglogo.png" // or wherever your logo is
+            src="/loglogo.png"
             alt="Data Privacy Portal Logo"
-            className="mx-auto h-20 w-auto"
+            className="h-20 w-auto"
           />
 
-          <div className="mt-6">
-            <Link to="/gdpr-analysis">
-              <button className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl">
-                <BarChart3 className="h-5 w-5" />
-                GDPR Analysis Dashboard
-              </button>
-            </Link>
-          </div>
+          {/* GDPR button */}
+          {/* GDPR button */}
+          <Link to="/gdpr-analysis">
+            <button className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-slate-900 via-slate-800 to-emerald-500 hover:opacity-90 text-white rounded-lg transition-all duration-200 shadow-lg">
+              <BarChart3 className="h-5 w-5" />
+              GDPR Analysis Dashboard
+            </button>
+          </Link>
+
         </header>
 
         <DataSearchForm onSearch={handleSearch} isLoading={isLoading} />

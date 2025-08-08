@@ -48,7 +48,7 @@ export const DataTable = ({ data, action }: DataTableProps) => {
   };
 
   const getProbabilityColor = (probability: number) => {
-    if (probability >= 80) return "text-green-600";
+    if (probability >= 80) return "text-white";
     if (probability >= 50) return "text-yellow-600";
     return "text-red-600";
   };
@@ -128,7 +128,7 @@ export const DataTable = ({ data, action }: DataTableProps) => {
             <Table>
               <TableHeader className="sticky top-0 bg-background/95 backdrop-blur-sm">
                 <TableRow className="border-border/50">
-                  <TableHead className="font-semibold text-center">Source</TableHead>
+                  <TableHead className="font-semibold text-center w-16">Source</TableHead>
                   <TableHead className="font-semibold">Name</TableHead>
                   <TableHead className="font-semibold">
                     <div className="flex items-center space-x-1">
@@ -154,7 +154,7 @@ export const DataTable = ({ data, action }: DataTableProps) => {
                     >
                       <TableCell className="font-medium">{record.source}</TableCell>
                       <TableCell className="font-medium">{record.name}</TableCell>
-                      <TableCell className="font-mono text-sm bg-muted/50 rounded px-2 py-1 max-w-32 truncate">
+                      <TableCell className="font-mono text-sm bg-muted/50 rounded px-2 py-1 max-w-48 truncate">
                         {record.key}
                       </TableCell>
                       <TableCell className="text-center">

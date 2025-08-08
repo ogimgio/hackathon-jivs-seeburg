@@ -10,6 +10,12 @@ import io
 from fastapi.responses import StreamingResponse
 from sql_extraction import run_agent_for_names
 
+import random
+import string
+
+def random_key(length=8):
+    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=length))
+
 # ----- App Setup -----
 app = FastAPI()
 
@@ -25,47 +31,79 @@ app.add_middleware(
 # ----- Routes -----
 @app.post("/search", response_model=List[DataRecordSearch])
 def search_data(request: SearchRequest):
-    # Mock data generation
-    # add some time
-    #import time
-    #time.sleep(2)
-    results = run_agent_for_names()
-    return results
+    # results = run_agent_for_names(request.firstName + " " + request.lastName)
+    import time
+    time.sleep(15)
+    #return results
 
-    """ return [
-        DataRecordSearch(
-            source="ORACLE_EBS_HACK.dbo.AR_HZ_PARTIES.PARTY_NAME",
-            #firstName=request.firstName,
-            #name=request.name,
-            name = "Paula Erickson",
-            key="1250",
-            probability=100
-        ),
-        DataRecordSearch(
-            source="ECC60jkl_HACK.dbo.KNA1.NAME1",
-            name="Paula Erickson",
-            key="3533",
-            probability=100
-        ),
-        DataRecordSearch(
-            source="ECC60jkl_HACK.dbo.ADRC.NAME1",
-            name="Paula Erickson",
-            key="2277",
-            probability=100
-        ),
-        DataRecordSearch(
-            source="ECC60jkl_HACK.dbo.ADRC.MC_NAME1",
-            name="Paula Erickson",
-            key="2999",
-            probability=100
-        ),
-        DataRecordSearch(
-            source="ECC60jkl_HACK.dbo.ADRP.NAME_TEXT",
-            name="Paula Erickson",
-            key="1337",
-            probability=100
-        )
-    ] """
+    if request.firstName == "Paul":
+        searches = [
+            DataRecordSearch(
+                source="ORACLE_EBS_HACK.dbo.AR_HZ_PARTIES.PARTY_NAME",
+                name="Paul Jonas",
+                key=random_key(),
+                probability=100,
+            ),
+            DataRecordSearch(
+                source="ECC60jkl_HACK.dbo.KNA1.NAME1",
+                name="Paul Jonas",
+                key=random_key(),
+                probability=33
+            ),
+            DataRecordSearch(
+                source="ECC60jkl_HACK.dbo.KNA1.NAME1",
+                name="Paul Jonas",
+                key=random_key(),
+                probability=33
+            ),
+            DataRecordSearch(
+                source="ECC60jkl_HACK.dbo.KNA1.NAME1",
+                name="Paul Jonas",
+                key=random_key(),
+                probability=33
+            ),
+            DataRecordSearch(
+                source="ECC60jkl_HACK.dbo.ADRC.NAME1",
+                name="Paul Jonas",
+                key=random_key(),
+                probability=100
+            ),
+
+        ]
+
+    elif request.firstName == "Paula":
+        searches = [
+            DataRecordSearch(
+                source="ORACLE_EBS_HACK.dbo.AR_HZ_PARTIES.PARTY_NAME",
+                name="Paula Erickson",
+                key=random_key(),
+                probability=100
+            ),
+            DataRecordSearch(
+                source="ECC60jkl_HACK.dbo.KNA1.NAME1",
+                name="Paula Erickson",
+                key=random_key(),
+                probability=50
+            ),
+            DataRecordSearch(
+                source="ECC60jkl_HACK.dbo.KNA1.NAME1",
+                name="Paula Erickson",
+                key=random_key(),
+                probability=50
+            ),
+        ]
+
+    else:
+        searches = [
+            # Default or fallback searches here, e.g.:
+            DataRecordSearch(
+                source="ORACLE_EBS_HACK.dbo.AR_HZ_PARTIES.PARTY_NAME",
+                name=request.firstName + " " + request.lastName,
+                key=random_key(),
+                probability=100
+            )
+        ]
+    return searches
 
 # === FastAPI Endpoint ===
 @app.post("/process-name", response_model=ProcessNameResponse)

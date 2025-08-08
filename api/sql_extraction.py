@@ -21,6 +21,7 @@ SEARCH_TARGETS = [
     {"database": "ECC60jkl_HACK", "schema": "dbo", "table": "ADRC", "column": "NAME1"},
     {"database": "ECC60jkl_HACK", "schema": "dbo", "table": "ADRC", "column": "MC_NAME1"},
     {"database": "ECC60jkl_HACK", "schema": "dbo", "table": "ADRP", "column": "NAME_TEXT"},
+
 ]
 
 def get_db_connection(database_name):
@@ -42,9 +43,8 @@ def query_name_matches(name: str) -> list:
         name (str): Name to search for.
 
     Returns:
-        list: Matching rows with metadata.
+        list: Matching names with metadata (but no extra row data).
     """
-    targets = SEARCH_TARGETS
     results = []
 
     def query_single(entry):
@@ -54,14 +54,14 @@ def query_name_matches(name: str) -> list:
             cursor = conn.cursor()
 
             query = f"""
-            SELECT * FROM [{schema}].[{table}]
+            SELECT [{column}]
+            FROM [{schema}].[{table}]
             WHERE [{column}] COLLATE Latin1_General_CI_AI LIKE ?
             """
             start_time = time.time()
             cursor.execute(query, (f"%{name}%",))
             rows = cursor.fetchall()
             elapsed = time.time() - start_time
-            columns = [desc[0] for desc in cursor.description]
             conn.close()
 
             if rows:
@@ -73,7 +73,7 @@ def query_name_matches(name: str) -> list:
                     "schema": schema,
                     "table": table,
                     "column": column,
-                    "row": dict(zip(columns, row))
+                    "name": row[0]  # Extract only the name from the result
                 }
                 for row in rows
             ]
@@ -85,7 +85,7 @@ def query_name_matches(name: str) -> list:
     max_threads = min(32, (multiprocessing.cpu_count() or 1) * 2)
     print(f"🚀 Using {max_threads} threads for querying...")
     with ThreadPoolExecutor(max_workers=max_threads) as executor:
-        futures = [executor.submit(query_single, entry) for entry in targets]
+        futures = [executor.submit(query_single, entry) for entry in SEARCH_TARGETS]
 
         for future in as_completed(futures):
             results.extend(future.result())
@@ -93,50 +93,46 @@ def query_name_matches(name: str) -> list:
     print(f"✅ Total matches found: {len(results)}")
     return results
 
+
 # ---------- FORMAT RESULTS AS DataRecordSearch ----------
 def format_results_as_datarecordsearch(results, name_input):
     formatted_outputs = []
 
     for result in results:
-        row_data = result["row"]
-        db, schema, table, column = result["database"], result["schema"], result["table"], result["column"]
+        db = result.get("database", "UnknownDB")
+        schema = result.get("schema", "UnknownSchema")
+        table = result.get("table", "UnknownTable")
+        column = result.get("column", "UnknownColumn")
+        matched_name = result.get("name", "Name Not Found")
+
         source = f"{db}.{schema}.{table}"
         key = f"{db}_{table}_{column}"
         
-        # Get the name from the column that was searched
-        extracted_name = row_data.get(column, "Name Not Found")
-
-        # Simulate uniqueness: we only have 1 row at a time, so assume 1 unique ID
-        probability = 100
-
         formatted_outputs.append(
             DataRecordSearch(
                 source=source,
-                name=extracted_name,
+                name=matched_name,
                 key=key,
-                probability=probability
+                probability=100
             )
         )
-
-
-        
 
     return formatted_outputs
 
 
 
-def run_agent_for_names():
-    model = LiteLLMModel(model_id="gpt-4o")
+
+def run_agent_for_names(name):
+    model = LiteLLMModel(model_id="gpt-4")
     agent = CodeAgent(
         tools=[query_name_matches],
         model=model,
         max_steps=3
     )
-    name_input = "Paula Erickson"
-    prompt = f"Find all rows in the known relevant tables where a column like name matches '{name_input}'"
+    print(f"🔍 Searching for name: {name}")
+    prompt = f"Find all rows in the known relevant tables where a column like name matches '{name}'"
     raw_result = agent.run(prompt)
 
     print("\n🟩 Formatted Final Results:")
-    formatted_records = format_results_as_datarecordsearch(raw_result, name_input)
+    formatted_records = format_results_as_datarecordsearch(raw_result, name)
     return formatted_records
-    

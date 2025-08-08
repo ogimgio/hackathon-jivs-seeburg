@@ -216,7 +216,7 @@ def create_gdpr_report(database_name: str = "AdventureWorks2019") -> StreamingRe
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error creating GDPR report: {str(e)}")
-
+    
 
 def generate_chart(database_name: str) -> io.BytesIO:
 
@@ -262,9 +262,9 @@ def generate_chart(database_name: str) -> io.BytesIO:
     months_short = [m.strftime('%Y-%m') for m in df['Month']]
     bars = plt.bar(range(len(df)), df['PercentageOlderThan10Years'], 
                     color='skyblue', edgecolor='navy', alpha=0.8, linewidth=1)
-    plt.title('Valori percentuali per mese', fontsize=14, fontweight='bold')
-    plt.xlabel('Mese', fontsize=12)
-    plt.ylabel('Percentuale (%)', fontsize=12)
+    plt.title('Monthly Growth of Records Passing the 10-Year Age Threshold', fontsize=14, fontweight='bold')
+    plt.xlabel('Month', fontsize=12)
+    plt.ylabel('Percentage (%)', fontsize=12)
     plt.xticks(range(0, len(df), 3), [months_short[i] for i in range(0, len(df), 3)], rotation=45)
 
     plt.grid(True, alpha=0.3)
